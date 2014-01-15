@@ -22,18 +22,22 @@
 // };
 // transport.sendMail(mailOptions, mailCallback);
 
-
 var fs = require('fs');
-var dateFormat = require('c:\\nodejs\\node_modules\\dateformat');
-var LoggingLevels = require('./logginglevels');
-var Utils = require('./utils');
-var Config = require('../config');
+var path = require('path');
+// this is the only relative path we need
+var Config = require('../../config');
+var DateFormat = require(Config.external.dateFormatPath);
+var Enum = require(Config.external.enumPath);
+var Utils = require(Config.common.utilsPath);
 
 function Logger() {
 
   /**
    * PRIVATE MEMBERS
    */
+
+  // what we need for handling various severity levels
+  var LoggingLevels = new Enum(['VERBOSE', 'NOTICE', 'WARNING', 'ERROR', 'OFF']);
 
   // Default values for key properties of the logger.
   var _logFilePath = '';
@@ -42,10 +46,22 @@ function Logger() {
   var _fileLevel = LoggingLevels.OFF;
   var _emailLevel = LoggingLevels.OFF;
 
+  // special-purpose parsing
+  var parseLevel = function(enumString, defaultValue) {
+    if (enumString) {
+      var candidate = LoggingLevels.get(enumString);
+      if (candidate) {
+        return candidate;
+      }
+    }
+    return defaultValue;
+  };
+
+
   // Let's try to set values from our configuration file.
   if (Config) {
-    if (Config.logger.logFilePath ) {
-      _logFilePath = Config.logger.logFilePath;
+    if (Config.common.logger.logFilePath ) {
+      _logFilePath = Config.common.logger.logFilePath;
     }
     if (Config.appName) {
       _appName = Config.appName; 
@@ -53,12 +69,8 @@ function Logger() {
     if (Config.machineName) {
       _machineName = Config.machineName;
     }
-    if (Config.logger.fileLevel) {
-      _fileLevel = Config.logger.fileLevel;
-    }
-    if (Config.logger.emailLevel) {
-      _emailLevel = Config.logger.emailLevel;
-    }
+    _fileLevel = parseLevel(Config.common.logger.fileLevel, _fileLevel);
+    _emailLevel = parseLevel(Config.common.logger.emailLevel, _emailLevel);
   }
 
   var _messageTemplate = 
@@ -114,12 +126,16 @@ function Logger() {
   // a failure to log to a file shouldn't prevent the 
   // attempt to log to email. But this ok for a first draft.
   var logIf = function(logLevelToCheck, message) {
-    var now = dateFormat(new Date(), 'yyyy-mm-dd:hh:MM:ss:l');
+    var now = DateFormat(new Date(), 'yyyy-mm-dd:hh:MM:ss:l');
     var fullMessage = 
       Utils.formatString(_messageTemplate, [now, logLevelToCheck, message]);
     writeToFileIf(logLevelToCheck, fullMessage, throwError);
     writeToEmailIf(logLevelToCheck, fullMessage, throwError);
   };
+
+  /**
+   * PUBLIC MEMBERS
+   */
 
   /**
    * PUBLIC METHODS

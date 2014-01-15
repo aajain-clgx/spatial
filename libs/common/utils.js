@@ -25,7 +25,6 @@ var utils = function() {
         throw new Error(
           'Template \'' + template + '\' is incorrectly formatted');
       }
-      console.log(template);
       if (matchItems.length !== items.length) {
         throw new Error(
           'The number of slots in the template does not match the number ' +
