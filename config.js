@@ -10,7 +10,7 @@ config.machineName = os.hostname();
 config.common = {
   logger : {
     logFilePath : 'f:\\logs\\spatial.txt',
-    fileLevel : 'ERROR',
+    fileLevel : 'NOTICE',
     emailLevel : 'ERROR',
     smtpServer : 'smtp.corelogic.com',
     emailSender : 'logger@corelogic.com',
