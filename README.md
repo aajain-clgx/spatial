@@ -128,7 +128,7 @@ Required parameters are either:
 
 or:
 
-- `address`: An address from which a latitude and longitude can be derived
+- `address`: an address from which a latitude and longitude can be derived
 
 A request containing any mixture of these will be rejected.
 
