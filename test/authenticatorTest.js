@@ -1,7 +1,7 @@
 // authenticatorTest.js
 // var Url = require('url');
 
-"use strict";
+'use strict';
 
 var Authenticator = require('../lib/common/authenticator');
 
