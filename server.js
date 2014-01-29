@@ -2,6 +2,8 @@
 //
 // Our spatial server
 
+'use strict';
+
 var restify = require('./lib/external/restify');
 var Logger = require('./lib/common/logger');
 var Utils = require('./lib/common/utils');

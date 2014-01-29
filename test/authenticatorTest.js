@@ -1,6 +1,8 @@
 // authenticatorTest.js
 // var Url = require('url');
 
+"use strict";
+
 var Authenticator = require('../lib/common/authenticator');
 
 var salt = '0123456789abcdef';
@@ -50,6 +52,15 @@ var keyMap = [
   }
 ];
 
+var requestUrlNeedingTimestamp = 
+  'http://www.gisportal.com/api/spatial/location?address=123+main+' + 
+    'st+boulder+co+80302&clientkey=abcdefgh&timestamp=';
+
+var signRequest = function(requestUrl, timestamp, saltedKey) {
+  var signable = Authenticator.cleanUrl(requestUrl);
+  var signature = Authenticator.getSignatureForRequest(requestUrl, saltedKey);
+  return signable + '&timestamp=' + timestamp + '&signature=' + signature;
+};
 
 // Authenticator.saltKey generates correctly salted key
 exports.saltKey = function(test) {
@@ -64,21 +75,50 @@ exports.saltKey = function(test) {
 // Authenticator.validateRequest validates correct signatures
 exports.getSignatureForRequest = function(test) {
   var timestamp = Math.round(Date.now()/1000);
-  var requestUrl = 'http://www.gisportal.com/api/spatial/location?address=123+main+' + 
-    'st+boulder+co+80302&clientkey=abcdefgh&timestamp=' + timestamp.toString();
+  var latest = timestamp - 600;
+  var requestUrl = requestUrlNeedingTimestamp + timestamp.toString();
+  var latestRequestUrl = requestUrlNeedingTimestamp + latest.toString();
   for (var i = 0; i < keyMap.length; i++) {
     var signature = Authenticator.getSignatureForRequest(requestUrl, keyMap[i].salted);
     var signedRequest = requestUrl + '&signature=' + signature;
+    var latestSignedRequest = latestRequestUrl + '&signature=' + signature;
     var valid = Authenticator.validateRequest(signedRequest, salt, keyMap[i].unsalted);
+    test.ok(valid, 'Expected validly signed request url');
+    valid = Authenticator.validateRequest(latestSignedRequest, salt, keyMap[i].unsalted);
     test.ok(valid, 'Expected validly signed request url');
   }
   test.done();
 };
 
 // Authenticator.validateRequest invalidates bad timestamps
+exports.validateRequestBadTimestamp = function(test) {
+  var earlier = Math.round(Date.now()/1000) - 601;
+  var later = Math.round(Date.now()/1000) + 1;
+  var requestUrl = requestUrlNeedingTimestamp + earlier;
+  for (var i = 0; i < keyMap.length; i++) {
+    var earlierSignedRequest = signRequest(requestUrl, earlier, keyMap[i].salted);
+    var earlierValid = Authenticator.validateRequest(earlierSignedRequest, salt, keyMap[i].unsalted);
+    test.ok(!earlierValid, 'Expected invalid request');
+    var laterSignedRequest = signRequest(requestUrl, later, keyMap[i].salted);
+    var laterValid = Authenticator.validateRequest(laterSignedRequest, salt, keyMap[i].unsalted);
+    test.ok(!laterValid, 'Expected invalid request');
+  }
+  test.done();
+};
 
 // Authenticator.validateRequest invalidates incorrect signatures
-
-// Authenticator.validateRequest invalidates changed urls
-
-
+exports.validateRequestBadSignature = function(test) {
+  var requestUrl = requestUrlNeedingTimestamp + Math.round(Date.now()/1000).toString();
+  for (var i = 0; i < keyMap.length; i++) {
+    var shortSignature = Authenticator.getSignatureForRequest(requestUrl, keyMap[i].salted).substring(1);
+    var shortSignedRequest = requestUrl + '&signature=' + shortSignature;
+    var valid = Authenticator.validateRequest(shortSignedRequest, salt, keyMap[i].unsalted);
+    var emptySignedRequest = requestUrl + '&signature=';
+    valid = Authenticator.validateRequest(emptySignedRequest, salt, keyMap[i].unsalted);
+    var longSignature = Authenticator.getSignatureForRequest(requestUrl, keyMap[i].salted) + '===';
+    var longSignedRequest = requestUrl + '&signature=' + longSignature;
+    valid = Authenticator.validateRequest(longSignedRequest, salt, keyMap[i].unsalted);
+    test.ok(!valid, 'Expected invalidly signed request url');
+  }
+  test.done();
+};

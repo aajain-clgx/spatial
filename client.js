@@ -2,6 +2,8 @@
 //
 // A simple test client for the echo server
 
+'use strict';
+
 var restify = require('./lib/external/restify');
 
 var client = restify.createJsonClient({

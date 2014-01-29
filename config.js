@@ -2,6 +2,8 @@
 //
 // Configuration file for spatial
 
+'use strict';
+
 var os = require('os');
 var config = {};
 
