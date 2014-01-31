@@ -4,7 +4,7 @@
 
 'use strict';
 
-var restify = require('./lib/external/restify');
+var restify = require('./spatial/lib/external/restify');
 
 var client = restify.createJsonClient({
   url: 'http://localhost:8080/echo/sourgrapes'
