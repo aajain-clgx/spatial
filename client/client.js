@@ -7,7 +7,7 @@
 var restify = require('./spatial/lib/external/restify');
 
 var client = restify.createJsonClient({
-  url: 'http://localhost:8080/echo/sourgrapes'
+  url: 'http://localhost:8888/echo/sourgrapes'
 });
 var restCall = function() {
   client.get('', function(err, req, res, obj) {

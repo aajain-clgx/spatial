@@ -26,4 +26,4 @@ var logListening = function() {
 
 server.get('/echo/:name', sendEchoInfo);
 
-server.listen(8080, logListening);
+server.listen(8888, logListening);
