@@ -4,10 +4,11 @@
 
 'use strict';
 
-var restify = require('./spatial/lib/external/restify');
+var restify = require('../spatial/lib/external/restify');
+var config = require('../config.js');
 
 var client = restify.createJsonClient({
-  url: 'http://localhost:8888/echo/sourgrapes'
+  url: 'http://localhost:' + config.serverPort + '/echo/sourgrapes'
 });
 var restCall = function() {
   client.get('', function(err, req, res, obj) {
