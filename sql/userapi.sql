@@ -240,3 +240,27 @@ CREATE OR REPLACE VIEW `userapipermissionsview` AS
        )
 );
 
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS `GetUserAccountInfoForNodeUser` $$
+CREATE PROCEDURE `GetUserAccountInfoForNodeUser`(param_publickey TEXT)
+BEGIN
+    SELECT
+        userview.username AS `UserName`,
+        userview.fullName AS `FullName` ,
+        userview.email_address AS `EmailAddress`,
+        userview.phone AS `Phone`,
+        userview.companyname AS `CompanyName`,
+        userview.usertype AS `UserType`,
+        userview.homepage AS `HomePage`,
+        userview.create_date AS `CreateDate`,
+        userview.disabled AS `Disabled`,
+        userview.disabledReason As `DisabledReason`,
+        userview.expire_date AS `AccountExpirationDate`
+    FROM
+    `webusage`.`userview`, `webusage`.`userapi`
+    WHERE
+    `userapi`.publickey = param_publickey and userapi.id = userview.id;
+END $$
+
+DELIMITER ;
