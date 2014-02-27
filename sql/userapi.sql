@@ -1,4 +1,6 @@
-﻿DROP TABLE IF EXISTS `webusage`.`userapi`;
+﻿USE `webusage`;
+
+DROP TABLE IF EXISTS `webusage`.`userapi`;
 CREATE TABLE  `webusage`.`userapi` (
   `ID` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `PublicKey` varchar(256) NOT NULL,
@@ -8,9 +10,12 @@ CREATE TABLE  `webusage`.`userapi` (
 ) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=latin1;
 
 
+# Private Key -> Salted Private Key
+# 'jux2m7k3xr' -> '4qgCyF0qQrdyj34/g+C7dGfjJ7A='
+# 'jsjrybvs4i' -> 'bVis8HPWaP3mEi48PMLa4PW+3To=' 
 
-INSERT INTO `webusage`.`userapi` VALUE(34, '425032B8C0FB434992F69370FED9D071', '4qgCyF0qQrdyj34/g+C7dGfjJ7A=');
-INSERT INTO `webusage`.`userapi` VALUE(78, '3EF991329350494487AF7136554C095C','bVis8HPWaP3mEi48PMLa4PW+3To=');
+INSERT INTO `webusage`.`userapi` VALUE(34, '425032B8C0FB434992F69370FED9D071', 'jux2m7k3xr');
+INSERT INTO `webusage`.`userapi` VALUE(78, '3EF991329350494487AF7136554C095C', 'jsjrybvs4i');
 
 
 DELIMITER $$

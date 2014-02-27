@@ -4,20 +4,24 @@
 //
 // Todo:
 //
-// 1. Merge with Authentication scheme
-// 2. Merge with restify errors
+// 1. Merge with restify errors
+// 2. Add logging for errors with stack trace
+// 3. Use async.waterfall
 
 
 'use strict';
 
 var restify = require('./lib/external/restify');
+var async = require('./lib/external/async');
 var Utils = require('util');
 var config = require('../config.js');
 var userlib = require('./lib/common/userlib.js');
-var Exception = require('./lib/common/exception.js');
+var exception = require('./lib/common/exception.js');
 var status = require('./lib/common/status.js');
+var authenticator = require('./lib/common/authenticator.js');
 var logger = config.logger;
 var userlib = userlib(config);
+var authenticator = authenticator(config);
 
 // SERVER INIT
 
@@ -32,10 +36,56 @@ var getElapsedTime = function(timeEnd){
   return Number(timeEnd[0]+timeEnd[1]*1.0e-9).toFixed(3);
 };
 
+var findMissingParam = function(queryParams){
+  var missing = [];
+
+  if(!queryParams.timestamp){
+    missing.push('timestamp');
+  }
+  if(!queryParams.signature){
+    missing.push('signature');
+  }
+  
+  return missing;
+};
+
+
+
+var handleAuthentication = function(request, callback){
+
+ // Verify if parameters are present
+ // Verify if it maches 
+
+  var queryParams = request.query;
+    
+  if(!(queryParams.timestamp && queryParams.signature)){
+
+    var missingParamStr = findMissingParam(queryParams).join(",");
+    return callback(new exception.MissingParameter(missingParamStr), null);
+
+  }else{
+ 
+   // Get PrivateKey
+    userlib.getPrivateKey(request.params.publickey, function(err, privatekey){
+      if(err){
+        return callback(err, null);
+      }else{
+        authenticator.validateRequest(request, privatekey, function(err, authenticated){
+          if(err){
+            return callback(err, null);
+          }else{
+            return callback(null, authenticated);
+          }
+        });
+      }
+    });
+  }
+};
 
 var handleError = function(err,response){
 
   // All exception that we "throw" are of type defined in exception.js
+  // All our exception are derived from Error
   // All exception defined by us have an ENUM for status
   // If case it is unhandled error, we set status to SERVER_ERROR
   
@@ -51,55 +101,80 @@ var handleError = function(err,response){
 // API FUNCTIONS
 
 var getPermissions = function(request, response, next){
- 
   var startTime = process.hrtime();
-  var queryParams = request.query;
   var callId = logger.getId();
 
   logger.verbose(Utils.format("%d getPermissions(publickey=%s) entry", callId, request.params.publickey));
 
-  userlib.getAuthToken(request.params.publickey, function(err, permissions){
+  async.series({
+    auth: function(callback){
+            handleAuthentication(request, callback);
+          },
+    action: function(callback){
+              console.log("getauthtoken");
+              userlib.getAuthToken(request.params.publickey, function(err, permissions){
+                if(err){
+                  return callback(err, null);
+                }else{
+                  return callback(null, {
+                    status: 'OK',
+                    message:'',
+                    result: permissions
+                  });
+                }
+              });   
+            }
+  },
+  function(err, results){
     if(err){
       handleError(err, response);
     }else{
-      response.send({
-        status: 'OK',
-        message:'',
-        result: permissions
-      });
+      response.send(results.action);
     }
-
+    
     var endTime = process.hrtime(startTime);
-    logger.verbose(Utils.format("%d getPermissions() elapsed=%ds", callId, getElapsedTime(endTime)));  
+    logger.verbose(Utils.format("%d getPermissions() elapsed=%ds", callId, getElapsedTime(endTime))); 
 
-    return next();
+    return next();      
   });
 };
 
 var getAccountInfo = function(request, response, next){
   var startTime = process.hrtime();
-  var queryParams = request.query;
   var callId = logger.getId();
  
   logger.verbose(Utils.format("%d getAccountInfo(publickey=%s) entry", callId, request.params.publickey));
 
-  userlib.getAccountInfo(request.params.publickey, function(err, info){
+  async.series({
+    auth: function(callback){ 
+            handleAuthentication(request, callback); 
+          },
+    action: function(callback){
+              userlib.getAccountInfo(request.params.publickey, function(err, info){
+                if(err){
+                  return callback(err, null);
+                }else{
+                  return callback(null, {
+                    status: 'OK',
+                    message:'',
+                    result: info
+                  });
+                }
+              });   
+            }
+  },
+  function(err, results){
     if(err){
       handleError(err, response);
     }else{
-      response.send({
-        status: 'OK',
-        message:'',
-        result: info
-      });
+      response.send(results.action);
     }
 
     var endTime = process.hrtime(startTime);
-    logger.verbose(Utils.format("%d getAccountInfo() elapsed=%ds", callId, getElapsedTime(endTime)));  
+    logger.verbose(Utils.format("%d getAccountInfo() elapsed=%ds", callId, getElapsedTime(endTime))); 
 
-    return next();
+    return next();      
   });
-
 };
 
 
