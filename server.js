@@ -6,7 +6,6 @@
 //
 // 1. Merge with restify errors
 // 2. Add logging for errors with stack trace
-// 3. Use async.waterfall
 
 
 'use strict';
@@ -82,7 +81,7 @@ var handleAuthentication = function(request, callback){
   }
 };
 
-var handleError = function(err,response){
+var handleError = function(err, callID, funcName, response){
 
   // All exception that we "throw" are of type defined in exception.js
   // All our exception are derived from Error
@@ -95,6 +94,8 @@ var handleError = function(err,response){
       message: err.message,
       result : {}
     });
+    
+    logger.error(Utils.format('%s ERROR in %s() with Exception=%s', callID, funcName, err.name), err);
   }
 };
 
@@ -111,7 +112,6 @@ var getPermissions = function(request, response, next){
             handleAuthentication(request, callback);
           },
     action: function(callback){
-              console.log("getauthtoken");
               userlib.getAuthToken(request.params.publickey, function(err, permissions){
                 if(err){
                   return callback(err, null);
@@ -127,7 +127,7 @@ var getPermissions = function(request, response, next){
   },
   function(err, results){
     if(err){
-      handleError(err, response);
+      handleError(err, callId, "getPermissions", response);
     }else{
       response.send(results.action);
     }
@@ -165,7 +165,7 @@ var getAccountInfo = function(request, response, next){
   },
   function(err, results){
     if(err){
-      handleError(err, response);
+      handleError(err, callId, "getAccountInfo", response);
     }else{
       response.send(results.action);
     }
