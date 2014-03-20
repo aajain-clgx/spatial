@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <title>GeocodeStreamer Demo</title>
+        <style type="text/css">
+            body {
+                font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
+                font-size: small;
+            }
+            ul
+            {
+              list-style-type: none;
+            }     
+             #map {
+                clear: both;
+                position: relative;*/
+                margin: 0;
+                width: 100%;
+                height: 800px;
+                border: 1px solid black;*/
+            }
+            #drop_zone {
+              border: 2px dashed #bbb;
+              -moz-border-radius: 5px;
+              -webkit-border-radius: 5px;
+             // border-radius: 5px;
+              text-align: center;
+              font: 20pt bold 'Vollkorn';
+              color: #bbb;
+              height:100px;
+              width:100%
+           }
+        </style>
+        
+	<!-- Load External scripts -->
+  <script src="http://openlayers.org/api/OpenLayers.js"></script>
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>      
+
+  <script type="text/javascript">
+	$(document).ready(function(){
+  
+    if (typeof String.prototype.startsWith != 'function') {
+        String.prototype.startsWith = function (str){
+        return this.slice(0, str.length) == str;
+      };
+    }
+    $('#drop_zone').css('background-color', '#E8E8E8');
+
+
+    // MAP CONTROL
+
+    var map;
+    var projDict = {'Geographic': new OpenLayers.Projection("EPSG:4326"), 'Mercator': new OpenLayers.Projection("EPSG:900913")}; 
+    var us_center_lonlat = new OpenLayers.LonLat(-95.6,39.5).transform(projDict.Geographic,projDict.Mercator);
+
+    OpenLayers.IMAGE_RELOAD_ATTEMPTS = 5;
+    OpenLayers.DOTS_PER_INCH = 25.4 / 0.28;
+
+    var options = {
+		  controls: [],
+        projection: projDict["Mercator"],
+        displayProjection: projDict["Geographic"],
+        units: "m",
+        maxResolution: 156543.0399
+      };
+
+	  // Create Map object
+    map = new OpenLayers.Map('map', options);
+
+	  var osm = new OpenLayers.Layer.OSM();
+    map.addLayers([osm]);
+ 
+    // build up all controls
+            
+	  map.addControl(new OpenLayers.Control.PanZoomBar({
+                    position: new OpenLayers.Pixel(2, 15)
+              }));
+    map.addControl(new OpenLayers.Control.Navigation());
+    map.addControl(new OpenLayers.Control.Scale('scale'));
+    map.addControl(new OpenLayers.Control.MousePosition({element: 'location'}));
+    map.setCenter(us_center_lonlat);
+    map.zoomTo(5);
+
+    var markers = new OpenLayers.Layer.Markers( "Markers" );
+    map.addLayer(markers);
+    var size = new OpenLayers.Size(21,25);
+    var offset = new OpenLayers.Pixel(-(size.w/2), -size.h);
+    var icon = new OpenLayers.Icon('http://www.openlayers.org/dev/img/marker.png', size, offset);
+
+  
+    // WEB SOCKET 
+    var ws;
+    var open = false;
+    var host = 'localhost';
+    var port = 7000;
+    var uri = '/ws';
+    var counter =0;
+
+    function init_websocket(){
+
+      ws = new WebSocket("ws://" + host + ":" + port + uri);
+      ws.onmessage = function(evt) {
+        var result = JSON.parse(evt.data);
+        counter++;
+        $('#geonum').html(counter);
+        if(!result.result[0].MatchCode.startsWith("U")){
+          markers.addMarker(new OpenLayers.Marker(
+                              new OpenLayers.LonLat(result.result[0].Longitude,result.result[0].Latitude).transform(projDict.Geographic, projDict.Mercator),
+                              icon.clone()));
+        }
+      };
+      ws.onclose = function(evt) { 
+        $('#drop_zone').css('background-color', '#E8E8E8');
+        $('#open').attr('disabled', false);
+        $('#geonum').html('0');
+      };
+      ws.onopen = function(evt) { 
+            open = true;
+            $('#drop_zone').css('background-color', 'white');
+            $('#open').attr('disabled', true);
+            alert('Connection established')
+      };
+    }
+
+    $("#open").click(function(evt) {
+      evt.preventDefault();
+      init_websocket();
+    });
+
+    $("#clear").click(function(evt){
+      evt.preventDefault();
+      markers.clearMarkers();
+      counter = 0;
+      $('#geonum').html('0');
+    });
+
+    // DRAG & DROP 
+    var dropZone = document.getElementById('drop_zone');
+    dropZone.ondragover = function(evt){
+      evt.preventDefault();
+      evt.dataTransfer.dropEffect = 'copy'; // Explicitly show this is a copy.
+    };
+    dropZone.ondragend = function(evt){
+      evt.preventDefault();
+    }
+    dropZone.ondrop = function(e){
+      e.preventDefault();
+      var file = e.dataTransfer.files[0],
+      reader = new FileReader();
+      reader.onload = function (evt) {
+        var fileText = evt.target.result;
+        var lines = fileText.split('\n');
+        for(var i = 0; i < lines.length; i++){
+          var linesplit = lines[i].split(',');
+          ws.send(JSON.stringify({ AddressLine: linesplit[0] + ' ' + linesplit[1], 
+                                   CityLine: linesplit[2] + ',' + linesplit[3]
+                  }));
+        }
+      };
+      reader.readAsText(file);
+    };
+
+  }); // JQUery
+  </script>
+</head>
+
+<body>
+  <ul>
+    <li><div id="map"></li>
+    <li><div id="drop_zone">Drop files here</div></li>
+    <li><input type="submit" id="open" value="Open Connection"/><input type="submit" id="clear" value="Clear Map"/></li>
+    <li>Geocodes: <span id="geonum">0</span></li>
+  </ul>
+</body>
+</html>
