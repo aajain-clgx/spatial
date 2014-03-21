@@ -1,12 +1,11 @@
-
 class GeoSpatialDefaults(object):
-  """Constant class to hold default values used by GeoSpatial workers """
+    """Constant class to hold default values used by GeoSpatial workers """
 
-  INPUT_ID_COL_NAME = "Id"
-  INPUT_GEOMETRY_COL_NAME = "InputGeometry"
-  INPUT_ADDRESS_COL_NAME = "$Address"
-  ERROR_TABLE_COLS = "$ErrorCode;$ErrorMessage"
-  GEOCODING_OUTPUT_COLS = ";".join(
+    INPUT_ID_COL_NAME = "Id"
+    INPUT_GEOMETRY_COL_NAME = "InputGeometry"
+    INPUT_ADDRESS_COL_NAME = "$Address"
+    ERROR_TABLE_COLS = "$ErrorCode;$ErrorMessage"
+    GEOCODING_OUTPUT_COLS = ";".join(
         [
             "INPUT.{col_id}".format(col_id=INPUT_ID_COL_NAME),
             "$AddressLine",
@@ -28,7 +27,7 @@ class GeoSpatialDefaults(object):
             "$StreetSide",
             "$UnitNumber"
         ])
-  BESTMATCH_FINDER_OPTIONS = 'BestResultOnly=True'
+    BESTMATCH_FINDER_OPTIONS = 'BestResultOnly=True'
 
 
 class StatusCode(object):
