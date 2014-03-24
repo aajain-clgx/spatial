@@ -1,5 +1,5 @@
 class GeoSpatialDefaults(object):
-    """Constant class to hold default values used by GeoSpatial workers """
+  """Constant class to hold default values used by GeoSpatial workers """
 
     INPUT_ID_COL_NAME = "Id"
     INPUT_GEOMETRY_COL_NAME = "InputGeometry"
@@ -28,6 +28,51 @@ class GeoSpatialDefaults(object):
             "$UnitNumber"
         ])
     BESTMATCH_FINDER_OPTIONS = 'BestResultOnly=True'
+    LAYER_ALIASES =
+        [
+#            "Brushfire",
+#            "CableTax",
+            "Coastline",
+#            "CombinedSewerArea",
+            "Continent",
+            "Country",
+            "County",
+#            "CrimeRisk",
+#            "EarthquakeEpicenter",
+#            "EarthquakeFault",
+#            "EQRisk",
+#            "Firebreak",
+#            "FireResponseArea",
+#            "FireStation",
+#            "FireStationDrivingDistance",
+#            "FloodMap",
+#            "FloodRiskScoreLayer",
+#            "HailProbability",
+#            "LavaFlow",
+#            "Mainland",
+#            "Mining",
+#            "Municipal",
+#            "MunicipalDissolve",
+#            "PayrollTax",
+#            "PremiumTax",
+#            "PropertyTaxGen",
+#            "PropertyTaxReg",
+#            "RentalTax",
+#            "SalesUseTax",
+#            "Sinkhole",
+#            "SpecialTaxDistrict",
+            "State",
+#            "Surge",
+#            "TelecommunicationTax",
+#            "Tiger_Townships",
+#            "Township",
+#            "Tsunami",
+#            "UtilityTax",
+#            "WildfireHistory",
+#            "WindBorneDebris",
+#            "Windpool",
+#            "WindProbability"
+        ]
 
 
 class StatusCode(object):

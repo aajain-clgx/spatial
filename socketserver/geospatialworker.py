@@ -36,7 +36,7 @@ class GeoSpatialWorker(multiprocessing.Process):
         # Init ZMQ sockets
         self.context = zmq.Context()
         self.socket_pull = self.context.socket(zmq.PULL)
-        self.socket_pull.connect(self.options.workurl)
+        self.socket_pull.connect(self.options.geospatial_workurl)
 
         self.socket_push = self.context.socket(zmq.PUSH)
         self.socket_push.connect(self.options.resulturl)
