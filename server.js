@@ -194,7 +194,7 @@ var bestGeocode = function(request, response, next){
     action: function(callback){
         var ws = new WebSocket(config.socketserver);
         ws.on('open', function(){
-            ws.send({AddressLine: request.params.addressline, CityLine: request.params.cityline},
+            ws.send(JSON.stringify({AddressLine: request.params.addressline, CityLine: request.params.cityline}),
                      function(err){
                         if(err){
                           return callback(err, null);
