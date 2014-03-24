@@ -12,6 +12,7 @@
 
 var restify = require('./lib/external/restify');
 var async = require('./lib/external/async');
+var WebSocket = require('./lib/external/ws');
 var Utils = require('util');
 var config = require('../config.js');
 var userlib = require('./lib/common/userlib.js');
@@ -27,7 +28,6 @@ var authenticator = authenticator(config);
 var server = restify.createServer({name: config.appName});
 server.use(restify.queryParser());
 server.use(restify.gzipResponse());
-
 
 // PRIVATE HELPER FUNCTIONS
 
@@ -177,10 +177,56 @@ var getAccountInfo = function(request, response, next){
   });
 };
 
+var bestGeocode = function(request, response, next){
+  var startTime = process.hrtime();
+  var callId = logger.getId();
+ 
+  logger.verbose(Utils.format("%d bestGeocode(publickey=%s,addressLine=%s,cityLine=%s) entry",
+                              callId, 
+                              request.params.publickey,
+                              request.params.addressline,
+                              request.params.cityline
+                ));
+  async.series({
+    auth: function(callback){ 
+            handleAuthentication(request, callback); 
+          },
+    action: function(callback){
+        var ws = new WebSocket(config.socketserver);
+        ws.on('open', function(){
+            ws.send({AddressLine: request.params.addressline, CityLine: request.params.cityline},
+                     function(err){
+                        if(err){
+                          return callback(err, null);
+                        }
+                      });
+          });
+
+        ws.on('message', function(data){
+          ws.close();
+          return callback(null, data);
+        });
+      }
+  },
+  function(err, results){
+    if(err){
+      handleError(err, callId, "bestGeocode", response);
+    }else{
+      response.send(results.action);
+    }
+
+    var endTime = process.hrtime(startTime);
+    logger.verbose(Utils.format("%d bestGeocode() elapsed=%ds", callId, getElapsedTime(endTime))); 
+
+    return next();          
+  }
+  );
+};
 
 // ROUTE
 server.get('/v1/permissions/:publickey', getPermissions);
 server.get('/v1/info/:publickey', getAccountInfo);
+server.get('/v1/geocode/:publickey', bestGeocode);
 
 
 // SERVER LAUNCH

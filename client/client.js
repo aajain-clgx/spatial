@@ -7,6 +7,7 @@
 var restify = require('../spatial/lib/external/restify');
 var config = require('../config.js');
 var clientlib = require('../spatial/lib/common/clientlib.js'); 
+var querystring = require('querystring');
 
 // CREATE CLIENT
 
@@ -35,3 +36,6 @@ var getServer = function(urlPath) {
 
 getServer('/v1/permissions/425032B8C0FB434992F69370FED9D071');
 getServer('/v1/info/425032B8C0FB434992F69370FED9D071');
+
+var geocode_params = querystring.stringify({addressline: '3239 Redstone Road', cityline: 'Boulder, CO'});
+getServer('/v1/geocode/425032B8C0FB434992F69370FED9D071?' + geocode_params);
