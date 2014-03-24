@@ -1,24 +1,27 @@
-""" 
+"""
   GeoSpatialLib module
-  
-  This library exposes common methods useds for creating python GSERT geospatial engine
+
+  This library exposes common methods useds for creating python
+  GSERT geospatial engine.
 """
 
 from pxpoint import table, pxcommon
 import json
 from geospatialdefaults import *
 
+
 def create_geocode_input_table(call_id, address_line, city_line=None):
     """Create an input table with a single row."""
     input_table = table.Table()
     input_table.append_col(GeoSpatialDefaults.INPUT_ID_COL_NAME)
     input_table.append_col('$AddressLine')
-    if city_line == None:
+    if city_line is None:
         input_table.append_row((call_id, address_line, ))
     else:
         input_table.append_col('$CityLine')
         input_table.append_row((str(call_id), address_line, city_line))
     return input_table
+
 
 def create_query_input_table(call_id, lat, lon):
     """Create an input table with a single row."""
@@ -44,8 +47,8 @@ def create_json_result_with_status(
     """Creates a JSON string from a PxPointSC result."""
 
     def sanitize_colname(colname):
-      """Remove $ sign from col name if it exists"""
-      return colname[1:] if colname[0] == '$' else colname
+        """Remove $ sign from col name if it exists"""
+        return colname[1:] if colname[0] == '$' else colname
 
     result = []
     status = StatusCode.OK
@@ -53,16 +56,16 @@ def create_json_result_with_status(
 
     if return_code == pxcommon.PXP_SUCCESS:
         if (output_table is None or output_table.nrows == 0):
-            status  = StatusCode.SERVER_ERROR
+            status = StatusCode.SERVER_ERROR
             message = "Output table is empty, despite a successful geocode"
         else:
             max_results = output_table.nrows() if max_results == -1 else max_results
             max_results = output_table.nrows() if max_results > output_table.nrows() else max_results
             # Dictionary comprehension inside list comprehension
-            result = [{ sanitize_colname(output_table.col_names[num]): str(output_table.rows[rownum][num]).encode("unicode_escape") 
+            result = [{sanitize_colname(output_table.col_names[num]): str(output_table.rows[rownum][num]).encode("unicode_escape") 
                                   for num in xrange(output_table.ncols())} for rownum in xrange(max_results)] 
     elif error_table is None or error_table.nrows == 0:
-        status  = StatusCode.SERVER_ERROR
+        status = StatusCode.SERVER_ERROR
         message = "Error table is empty, despite apparent error"
     else:
         error_row = error_table.rows[0]
@@ -76,10 +79,10 @@ def create_json_result_with_status(
     return_obj["status"] = status
     return_obj["message"] = message
 
-    return json.dumps(return_obj, sort_keys=True) 
+    return json.dumps(return_obj, sort_keys=True)
 
 if __name__ == "__main__":
-    # Test Code 
+    # Test Code
     DEFAULT_LICENSE_FILE = r'pxpoint.lic'
     LICENSE_KEY = 123456789
     DATASET_ROOT = r'/mnt/data/PxPoint_2013_12'

@@ -23,7 +23,7 @@ define("licensekey", default=123456789)
 define("dataset_root", default="/mnt/data/PxPoint_2013_12")
 
 # Global WebSocket multiplexer
-webSocketID = 0   
+webSocketID = 0
 webSocketClients = {}
 
 
@@ -37,11 +37,11 @@ class WSHandler(tornado.websocket.WebSocketHandler):
         """
         global webSocketID
         webSocketID = webSocketID + 1
-        self.socketid = webSocketID        
+        self.socketid = webSocketID
         webSocketClients[webSocketID] = self
 
         print 'New connection: %d' % self.socketid
-      
+
     def on_message(self, message):
         """Handler for Receiving Messages
            Gets the message on Websocket and relays it to the network of GeocodeWorker
@@ -51,8 +51,8 @@ class WSHandler(tornado.websocket.WebSocketHandler):
             input_val['WebSocketId'] = self.socketid
             sockpushstream.send_json(input_val)
         except Exception as ex:
-            self.write_message(json.dumps({'Status': 'INVALID_ARGUMENT', 
-                                           'Message':'Cannot parse Json message'}))
+            self.write_message(json.dumps({'Status': 'INVALID_ARGUMENT',
+                                           'Message': 'Cannot parse Json message'}))
 
     def on_close(self):
         """Handler for connection close
@@ -63,7 +63,7 @@ class WSHandler(tornado.websocket.WebSocketHandler):
 
 
 def handle_geocode_result(msg):
-    """Handle for resutls from Geocode Worker 
+    """Handle for resutls from Geocode Worker
        This function sends the correct message to appropriate web socket client
        which is identified by INPUT.Id field
     """
@@ -72,20 +72,19 @@ def handle_geocode_result(msg):
     if(multiplex_stream_id in webSocketClients):
         webSocketClients[multiplex_stream_id].write_message(msg[0])
 
- 
+
 # Global Route
 application = tornado.web.Application([
     (r'/ws', WSHandler),
 ])
- 
- 
+
 # Start Main
 
 if __name__ == "__main__":
- 
+
     # Parse configuration
     tornado.options.parse_config_file("gissocket.config")
- 
+
     # Start GeocodeWorker subprocess
 
     geocode_worker = geocodeworker.GeocodeWorker(options)
@@ -100,7 +99,7 @@ if __name__ == "__main__":
     ctx = zmq.Context.instance()
     sock_push = ctx.socket(zmq.PUSH)
     sock_push.bind(options.workurl)
-    sockpushstream = ZMQStream(sock_push)    
+    sockpushstream = ZMQStream(sock_push)
 
     sock_pull = ctx.socket(zmq.PULL)
     sock_pull.bind(options.resulturl)
