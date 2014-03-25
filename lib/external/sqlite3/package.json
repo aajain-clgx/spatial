@@ -104,5 +104,9 @@
     "node-pre-gyp"
   ],
   "_id": "sqlite3@2.2.0",
-  "_from": "sqlite3@"
+  "dist": {
+    "shasum": "d6c9bc0723d5138d5cc456ab24e5026ce1e3b5cf"
+  },
+  "_from": "sqlite3@",
+  "_resolved": "https://registry.npmjs.org/sqlite3/-/sqlite3-2.2.0.tgz"
 }

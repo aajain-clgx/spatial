@@ -18,11 +18,11 @@ class GeoSpatialWorker(multiprocessing.Process):
         catalog = read_catalog_to_dict(
             self.options.datacatalog_path, self.options.pxse_dir)
         spatial_handle,
-        return_code,
-        return_message = pxpointsc.geospatial_init_catalog(catalog)
-        if return_code != 0:
+        rc,
+        msg = pxpointsc.geospatial_init_catalog(catalog)
+        if rc != 0:
             raise RuntimeError('Code: {c}. Message: {m}'.format(
-                c=return_code, m=return_message))
+                c=rc, m=msg))
 
         layer_alias_fields_map = pxpointsc.geospatial_prepare(
             spatial_handle, catalog, GeoSpatialDefaults.LAYER_ALIASES)
@@ -45,25 +45,21 @@ class GeoSpatialWorker(multiprocessing.Process):
 
             msg = self.socket_pull.recv_json()
 
-            input_table = geospatiallib.create_query_input_table(
+            in_tbl = geospatiallib.create_query_input_table(
                 msg['WebSocketId'], msg['lat'], msg['lon'])
 
-            output_columns = '[{a}]Input.Id;' + ';'.join(
+            out_cols = '[{a}]Input.Id;' + ';'.join(
                 layer_alias_fields_map[msg['layer']])
             query_options = geospatiallib.create_query_options(msg['layer'])
-            output_table,
-            error_table,
-            return_code,
-            return_message = pxpointsc.geospatial_query(
+            out_tbl, err_tbl, rc, msg = pxpointsc.geospatial_query(
                 self.spatial_handle,
-                input_table,
-                output_columns,
-                GeoSpatialDefaults.ERROR_TABLE_COLS,
+                 in_tbl,
+                out_cols,
+                GeoSpatialDefaults.get_query_error_columns(msg['layer'])
                 query_options)
 
             # Create output JSON dictionary
-            output = geospatiallib.create_json_result_with_status(
-                output_table, error_table, return_code)
+            output = geospatiallib.create_json_result_with_status(out_tbl, err_tbl, rc)
 
             # put this back on the pipe
             self.socket_push.send(output)

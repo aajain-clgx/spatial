@@ -23,6 +23,7 @@ define("licensefile", default="pxpoint.lic")
 define("licensekey", default=123456789)
 define("dataset_root", default="/mnt/data/PxPoint_2013_12")
 define("datacatalog_path", default="datacatalog.xml")
+define("pxse_dir", default="error-in-gissocket")
 
 # Global WebSocket multiplexer
 webSocketID = 0   

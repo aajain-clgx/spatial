@@ -17,13 +17,11 @@ class GeocodeWorker(multiprocessing.Process):
         """Initialize Geoocder for PxPointSC"""
         catalog = read_catalog_to_dict(
             self.options.datacatalog_path, self.options.pxse_dir)
-        geocoder_handle,
-        return_code,
-        return_message = pxpointsc.geocoder_init_catalog(catalog)
-        if return_code != 0:
+        geocoder_handle, rc, msg = pxpointsc.geocoder_init_catalog(catalog)
+        if rc != 0:
             raise RuntimeError('Code: {c}. Message: {m}'.format(
-                c=return_code, m=return_message))
-        return geocoder_handle, return_code, return_message
+                c=rc, m=msg))
+        return geocoder_handle, rc, msg
 
     def run(self):
         """ Geocode Worker run function
@@ -48,22 +46,19 @@ class GeocodeWorker(multiprocessing.Process):
 
             msg = self.socket_pull.recv_json()
 
-            input_table = geospatiallib.create_geocode_input_table(
+            in_tbl = geospatiallib.create_geocode_input_table(
                 msg['WebSocketId'], msg['AddressLine'], msg['CityLine'])
 
-            output_table,
-            error_table,
-            return_code,
-            return_message = pxpointsc.geocoder_geocode(
+            out_tbl, err_tbl, rc, msg = pxpointsc.geocoder_geocode(
                 self.geocoder_handle,
-                input_table,
+                in_tbl,
                 GeoSpatialDefaults.GEOCODING_OUTPUT_COLS,
                 GeoSpatialDefaults.ERROR_TABLE_COLS,
                 GeoSpatialDefaults.BESTMATCH_FINDER_OPTIONS)
 
             # Create output JSON dictionary
             output = geospatiallib.create_json_result_with_status(
-                output_table, error_table, return_code)
+                out_tbl, err_tbl, rc)
 
             # put this back on the pipe
             self.socket_push.send(output)
