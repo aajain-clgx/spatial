@@ -11,6 +11,7 @@ from tornado.ioloop import IOLoop
 import tornado.web
 from tornado.options import define, options
 import geocodeworker
+import geospatialworker
 import json
 
 
@@ -52,7 +53,13 @@ class WSHandler(tornado.websocket.WebSocketHandler):
         try:
             input_val = json.loads(message)
             input_val['WebSocketId'] = self.socketid
-            sockpushstream.send_json(input_val)
+            operation_name = input_val['Operation']
+            if operation_name == 'geocode':
+                sockpush_geocode_stream.send_json(input_val)
+            elif operation_name == 'query':
+                sockpush_spatial_stream.send_json(input_val)
+            else:
+                raise Exception('unrecognized operation %s' % str(operation_name))
         except Exception as ex:
             self.write_message(json.dumps({'Status': 'INVALID_ARGUMENT', 
                                            'Message':'Cannot parse Json message'}))
@@ -95,15 +102,21 @@ if __name__ == "__main__":
     geocode_worker.start()
     geocode_worker2 = geocodeworker.GeocodeWorker(options)
     geocode_worker2.start()
+    geospatial_worker = geospatialworker.GeoSpatialWorker(options)
+    geospatial_worker.start()
 
     # Init Communication Sockets
     # sock_push: Pushes websocket requests to workers
     # sock_pull: Gathers results from the workers
 
     ctx = zmq.Context.instance()
-    sock_push = ctx.socket(zmq.PUSH)
-    sock_push.bind(options.geocode_workurl)
-    sockpushstream = ZMQStream(sock_push)    
+    sock_push_geocode = ctx.socket(zmq.PUSH)
+    sock_push_geocode.bind(options.geocode_workurl)
+    sockpush_geocode_stream = ZMQStream(sock_push_geocode)
+
+    sock_push_spatial = ctx.socket(zmq.PUSH)
+    sock_push_spatial.bind(options.geospatial_workurl)
+    sockpush_spatial_stream = ZMQStream(sock_push_spatial)
 
     sock_pull = ctx.socket(zmq.PULL)
     sock_pull.bind(options.resulturl)

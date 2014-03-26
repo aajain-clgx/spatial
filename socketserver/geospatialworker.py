@@ -1,6 +1,6 @@
 import multiprocessing
 from pxpoint import pxpointsc
-from pxpoint.util.datalog import *  # NOQA
+from pxpoint.util.datacatalog import *  # NOQA
 from geospatialdefaults import *  # NOQA
 import geospatiallib
 import zmq
@@ -17,9 +17,7 @@ class GeoSpatialWorker(multiprocessing.Process):
         """Initialize Spatial for PxPointSC"""
         catalog = read_catalog_to_dict(
             self.options.datacatalog_path, self.options.pxse_dir)
-        spatial_handle,
-        rc,
-        msg = pxpointsc.geospatial_init_catalog(catalog)
+        spatial_handle, rc, msg = pxpointsc.geospatial_init_catalog(catalog)
         if rc != 0:
             raise RuntimeError('Code: {c}. Message: {m}'.format(
                 c=rc, m=msg))
@@ -48,14 +46,14 @@ class GeoSpatialWorker(multiprocessing.Process):
             in_tbl = geospatiallib.create_query_input_table(
                 msg['WebSocketId'], msg['lat'], msg['lon'])
 
-            out_cols = '[{a}]Input.Id;' + ';'.join(
+            out_cols = '[{a}]INPUT.Id;'.format(a=msg['layer']) + ';'.join(
                 layer_alias_fields_map[msg['layer']])
             query_options = geospatiallib.create_query_options(msg['layer'])
             out_tbl, err_tbl, rc, msg = pxpointsc.geospatial_query(
                 self.spatial_handle,
                  in_tbl,
                 out_cols,
-                GeoSpatialDefaults.get_query_error_columns(msg['layer'])
+                GeoSpatialDefaults.get_query_error_columns(msg['layer']),
                 query_options)
 
             # Create output JSON dictionary

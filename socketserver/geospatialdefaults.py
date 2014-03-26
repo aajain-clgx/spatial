@@ -73,6 +73,7 @@ class GeoSpatialDefaults(object):
         #"WindProbability"
         ]
 
+    @staticmethod
     def get_query_error_columns(layer_alias):
         cols = GeoSpatialDefaults.ERROR_TABLE_COLS.split(";")
         return ";".join(["[{alias}]{col}".format(alias=layer_alias, col=c) for c in cols])

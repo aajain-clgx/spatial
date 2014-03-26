@@ -177,6 +177,53 @@ var getAccountInfo = function(request, response, next){
   });
 };
 
+var query = function(request, response, next){
+  var startTime = process.hrtime();
+  var callId = logger.getId();
+ 
+  logger.verbose(Utils.format("%d query(publickey=%s,lat=%s,lon=%s,layer=%s) entry",
+                              callId, 
+                              request.params.publickey,
+                              request.params.lat,
+                              request.params.lon,
+                              request.params.layer
+                ));
+  async.series({
+    auth: function(callback){ 
+            handleAuthentication(request, callback); 
+          },
+    action: function(callback){
+        var ws = new WebSocket(config.socketserver);
+        ws.on('open', function(){
+            ws.send(JSON.stringify({Operation: 'query', lat: request.params.lat, lon: request.params.lon, layer: request.params.layer}),
+                     function(err){
+                        if(err){
+                          return callback(err, null);
+                        }
+                      });
+          });
+
+        ws.on('message', function(data){
+          ws.close();
+          return callback(null, data);
+        });
+      }
+  },
+  function(err, results){
+    if(err){
+      handleError(err, callId, "query", response);
+    }else{
+      response.send(results.action);
+    }
+
+    var endTime = process.hrtime(startTime);
+    logger.verbose(Utils.format("%d query() elapsed=%ds", callId, getElapsedTime(endTime))); 
+
+    return next();          
+  }
+  );
+};
+
 var bestGeocode = function(request, response, next){
   var startTime = process.hrtime();
   var callId = logger.getId();
@@ -194,7 +241,7 @@ var bestGeocode = function(request, response, next){
     action: function(callback){
         var ws = new WebSocket(config.socketserver);
         ws.on('open', function(){
-            ws.send(JSON.stringify({AddressLine: request.params.addressline, CityLine: request.params.cityline}),
+            ws.send(JSON.stringify({Operation: 'geocode', AddressLine: request.params.addressline, CityLine: request.params.cityline}),
                      function(err){
                         if(err){
                           return callback(err, null);
@@ -227,6 +274,7 @@ var bestGeocode = function(request, response, next){
 server.get('/v1/permissions/:publickey', getPermissions);
 server.get('/v1/info/:publickey', getAccountInfo);
 server.get('/v1/geocode/:publickey', bestGeocode);
+server.get('/v1/query/:publickey', query)
 
 
 // SERVER LAUNCH

@@ -39,3 +39,6 @@ getServer('/v1/info/425032B8C0FB434992F69370FED9D071');
 
 var geocode_params = querystring.stringify({addressline: '3239 Redstone Road', cityline: 'Boulder, CO'});
 getServer('/v1/geocode/425032B8C0FB434992F69370FED9D071?' + geocode_params);
+
+var geospatial_params = querystring.stringify({lat: '40.0', lon: '-105.25', layer: 'County'});
+getServer('/v1/query/425032B8C0FB434992F69370FED9D071?' + geospatial_params);
