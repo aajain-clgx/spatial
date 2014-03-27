@@ -27,7 +27,7 @@ define("datacatalog_path", default="datacatalog.xml")
 define("pxse_dir", default="error-in-gissocket")
 
 # Global WebSocket multiplexer
-webSocketID = 0   
+webSocketID = 0
 webSocketClients = {}
 
 
@@ -36,19 +36,20 @@ class WSHandler(tornado.websocket.WebSocketHandler):
 
     def open(self):
         """Handler for open connections
-           On connection setup, sets up identifier for this websocket connection
-           and setup multiplex dictionary for this instance
+           On connection setup, sets up identifier for this websocket
+           connection and setup multiplex dictionary for this instance
         """
         global webSocketID
         webSocketID = webSocketID + 1
-        self.socketid = webSocketID        
+        self.socketid = webSocketID
         webSocketClients[webSocketID] = self
 
         print 'New connection: %d' % self.socketid
-      
+
     def on_message(self, message):
         """Handler for Receiving Messages
-           Gets the message on Websocket and relays it to the network of GeocodeWorker
+           Gets the message on Websocket and relays it to the network
+           of GeocodeWorker/GeoSpatialWorker
         """
         try:
             input_val = json.loads(message)
@@ -61,8 +62,9 @@ class WSHandler(tornado.websocket.WebSocketHandler):
             else:
                 raise Exception('unrecognized operation %s' % str(operation_name))
         except Exception as ex:
-            self.write_message(json.dumps({'Status': 'INVALID_ARGUMENT', 
-                                           'Message':'Cannot parse Json message'}))
+            self.write_message(json.dumps({'status': 'INVALID_ARGUMENT',
+                                           'message': ex.message,
+                                           'result': []}))
 
     def on_close(self):
         """Handler for connection close
@@ -73,40 +75,45 @@ class WSHandler(tornado.websocket.WebSocketHandler):
 
 
 def handle_geocode_result(msg):
-    """Handle for resutls from Geocode Worker 
+    """Handle for resutls from Geocode/GeoSpatial Worker
        This function sends the correct message to appropriate web socket client
        which is identified by INPUT.Id field
     """
     output = json.loads(msg[0])
-    multiplex_stream_id = int(output["result"][0]['INPUT.Id'])
+    multiplex_stream_id = int(output["socketid"])
+    del output["socketid"]
     if(multiplex_stream_id in webSocketClients):
-        webSocketClients[multiplex_stream_id].write_message(msg[0])
+        webSocketClients[multiplex_stream_id].write_message(json.dumps(output))
 
- 
+
 # Global Route
 application = tornado.web.Application([
     (r'/ws', WSHandler),
 ])
- 
- 
+
+
 # Start Main
 
 if __name__ == "__main__":
- 
+
     # Parse configuration
     tornado.options.parse_config_file("gissocket.config")
- 
+
     # Start GeocodeWorker subprocess
 
     geocode_worker = geocodeworker.GeocodeWorker(options)
     geocode_worker.start()
     geocode_worker2 = geocodeworker.GeocodeWorker(options)
     geocode_worker2.start()
+
+    # Start GeoSpatial subprocess
+
     geospatial_worker = geospatialworker.GeoSpatialWorker(options)
     geospatial_worker.start()
 
     # Init Communication Sockets
-    # sock_push: Pushes websocket requests to workers
+    # sock_push_geocode: Pushes websocket requests to geocode workers
+    # sock_push_geospatial: Pushes websocket requests to geospatial workers
     # sock_pull: Gathers results from the workers
 
     ctx = zmq.Context.instance()

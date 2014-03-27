@@ -33,7 +33,7 @@ class GeoSpatialDefaults(object):
         #"CableTax",
         "Coastline",
         #"CombinedSewerArea",
-        "Continent",
+        #"Continent",
         "Country",
         "County",
         #"CrimeRisk",

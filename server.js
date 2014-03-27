@@ -213,7 +213,7 @@ var query = function(request, response, next){
     if(err){
       handleError(err, callId, "query", response);
     }else{
-      response.send(results.action);
+      response.send(JSON.parse(results.action));
     }
 
     var endTime = process.hrtime(startTime);
@@ -259,7 +259,7 @@ var bestGeocode = function(request, response, next){
     if(err){
       handleError(err, callId, "bestGeocode", response);
     }else{
-      response.send(results.action);
+      response.send(JSON.parse(results.action));
     }
 
     var endTime = process.hrtime(startTime);
