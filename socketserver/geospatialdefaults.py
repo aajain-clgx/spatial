@@ -1,3 +1,10 @@
+"""
+Module : GeoSpatialDefaults
+
+Defines various constants used by GISSocketServer
+
+"""
+
 class GeoSpatialDefaults(object):
     """Constant class to hold default values used by GeoSpatial workers """
 
@@ -75,8 +82,11 @@ class GeoSpatialDefaults(object):
 
     @staticmethod
     def get_query_error_columns(layer_alias):
+        """Returns the error columns for GeoSpatial query"""
+
         cols = GeoSpatialDefaults.ERROR_TABLE_COLS.split(";")
         return ";".join(["[{alias}]{col}".format(alias=layer_alias, col=c) for c in cols])
+
 
 class StatusCode(object):
     """StatusCode returned by GeoSpatial Worker"""

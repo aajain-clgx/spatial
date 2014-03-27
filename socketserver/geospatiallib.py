@@ -34,6 +34,7 @@ def create_query_input_table(call_id, lat, lon):
 
 
 def create_query_options(layer_alias, search_dist_meters=0):
+    """Create GeoSpatial query options string (for pxpointsc)"""
     proc_opts = 'InputGeoColumn=InputGeometry'
     if search_dist_meters <= 0:
         proc_opts = ';'.join([proc_opts, '[{a}]{o}'.format(
@@ -89,8 +90,8 @@ def create_json_result_with_status(
             ]
 
             socketid = result[0]['INPUT.Id']
-            for d in result:
-                del d['INPUT.Id']
+            for row in result:
+                del row['INPUT.Id']
     elif err_tbl is None or err_tbl.nrows == 0:
         status = StatusCode.SERVER_ERROR
         message = "Error table is empty, despite apparent error"
