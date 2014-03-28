@@ -5,7 +5,6 @@
 // Todo:
 //
 // 1. Merge with restify errors
-// 2. Add logging for errors with stack trace
 
 
 'use strict';
@@ -194,6 +193,9 @@ var query = function(request, response, next){
           },
     action: function(callback){
         var ws = new WebSocket(config.socketserver);
+        ws.onerror = function(reason){
+          return callback(reason, null);
+        }; 
         ws.on('open', function(){
             ws.send(JSON.stringify({Operation: 'query', lat: request.params.lat, lon: request.params.lon, layer: request.params.layer}),
                      function(err){
@@ -211,6 +213,7 @@ var query = function(request, response, next){
   },
   function(err, results){
     if(err){
+      console.log(err);
       handleError(err, callId, "query", response);
     }else{
       response.send(JSON.parse(results.action));
@@ -222,6 +225,11 @@ var query = function(request, response, next){
     return next();          
   }
   );
+};
+
+var county = function(request, response, next){
+  request.params.layer = 'County';
+  return query(request, response, next);
 };
 
 var bestGeocode = function(request, response, next){
@@ -271,11 +279,11 @@ var bestGeocode = function(request, response, next){
 };
 
 // ROUTE
-server.get('/v1/permissions/:publickey', getPermissions);
-server.get('/v1/info/:publickey', getAccountInfo);
-server.get('/v1/geocode/:publickey', bestGeocode);
-server.get('/v1/query/:publickey', query)
-
+server.get('/permissions/:publickey', getPermissions);
+server.get('/info/:publickey', getAccountInfo);
+server.get('/geocode/:publickey', bestGeocode);
+server.get('/query/:publickey', query);
+server.get('/county/:publickey', county);
 
 // SERVER LAUNCH
 
