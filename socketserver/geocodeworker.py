@@ -49,7 +49,7 @@ class GeocodeWorker(multiprocessing.Process):
             in_tbl = geospatiallib.create_geocode_input_table(
                 msg['WebSocketId'], msg['AddressLine'], msg['CityLine'])
 
-            out_tbl, err_tbl, rc, msg = pxpointsc.geocoder_geocode(
+            out_tbl, err_tbl, rc, pxmsg = pxpointsc.geocoder_geocode(
                 self.geocoder_handle,
                 in_tbl,
                 GeoSpatialDefaults.GEOCODING_OUTPUT_COLS,
@@ -58,7 +58,7 @@ class GeocodeWorker(multiprocessing.Process):
 
             # Create output JSON dictionary
             output = geospatiallib.create_json_result_with_status(
-                out_tbl, err_tbl, rc)
+                msg['WebSocketId'], out_tbl, err_tbl, rc, pxmsg)
 
             # put this back on the pipe
             self.socket_push.send(output)

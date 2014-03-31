@@ -47,17 +47,22 @@ class GeoSpatialWorker(multiprocessing.Process):
                 msg['WebSocketId'], msg['lat'], msg['lon'])
 
             out_cols = '[{a}]INPUT.Id;'.format(a=msg['layer']) + ';'.join(
-                layer_alias_fields_map[msg['layer']])
+                layer_alias_fields_map.get(msg['layer'], msg['layer']))
             query_options = geospatiallib.create_query_options(msg['layer'])
-            out_tbl, err_tbl, rc, msg = pxpointsc.geospatial_query(
+            out_tbl, err_tbl, rc, pxmsg = pxpointsc.geospatial_query(
                 self.spatial_handle,
-                 in_tbl,
+                in_tbl,
                 out_cols,
                 GeoSpatialDefaults.get_query_error_columns(msg['layer']),
                 query_options)
 
             # Create output JSON dictionary
-            output = geospatiallib.create_json_result_with_status(out_tbl, err_tbl, rc)
+            output = geospatiallib.create_json_result_with_status(
+                msg['WebSocketId'],
+                out_tbl,
+                err_tbl,
+                rc,
+                pxmsg)
 
             # put this back on the pipe
             self.socket_push.send(output)

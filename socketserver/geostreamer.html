@@ -153,7 +153,8 @@
         var lines = fileText.split('\n');
         for(var i = 0; i < lines.length; i++){
           var linesplit = lines[i].split(',');
-          ws.send(JSON.stringify({ AddressLine: linesplit[0] + ' ' + linesplit[1], 
+          ws.send(JSON.stringify({ Operation: 'geocode', 
+                                   AddressLine: linesplit[0] + ' ' + linesplit[1], 
                                    CityLine: linesplit[2] + ',' + linesplit[3]
                   }));
         }

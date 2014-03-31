@@ -60,62 +60,59 @@ def create_server_error_json_result(statuscode, message):
 
 
 def create_json_result_with_status(
-        out_tbl, err_tbl, rc, max_results=-1):
+        socketid, out_tbl, err_tbl, rc, rm, max_results=-1):
     """Creates a JSON string from a PxPointSC result."""
 
     def sanitize_colname(colname):
         """Remove $ sign from col name if it exists"""
         return colname[1:] if colname[0] == '$' else colname
 
-    result = []
-    status = StatusCode.OK
-    message = ""
-    socketid = -1
+    return_obj = {}
+    return_obj['socketid'] = socketid
 
     if rc == pxcommon.PXP_SUCCESS:
-        o_nrows = 0 if out_tbl is None else out_tbl.nrows()
-        if o_nrows == 0:
-            status = StatusCode.SERVER_ERROR
-            message = "Output table is empty, despite a successful geocode"
-        else:
-            if max_results > o_nrows or max_results == -1:
-                max_results = o_nrows
-
-            # Dictionary comprehension inside list comprehension
-            result = [
-                {sanitize_colname(out_tbl.col_names[i]):
-                    str(out_tbl.rows[j][i]).encode("unicode_escape")
-                    for i in xrange(out_tbl.ncols())}
-                for j in xrange(max_results)
+        # If there are rows in error table, mark status as error
+        if(err_tbl is not None and err_tbl.nrows() > 0):
+            errors = [
+                {err_tbl.col_names[i]: str(err_tbl.rows[j][i]).encode("unicode_escape")
+                    for i in xrange(err_tbl.ncols())}
+                for j in xrange(err_tbl.nrows())
             ]
+            return_obj["status"] = StatusCode.SERVER_ERROR
+            return_obj["message"] = errors[0]['$ErrorMessage']
+            return_obj["result"] = []
+        else:
+            o_nrows = 0 if out_tbl is None else out_tbl.nrows()
+            if o_nrows == 0:
+                return_obj["status"] = StatusCode.SERVER_ERROR
+                return_obj["message"] = "Output table is empty, despite a successful operation"
+                return_obj["result"] = []
+            else:
+                if max_results > o_nrows or max_results == -1:
+                    max_results = o_nrows
 
-            socketid = result[0]['INPUT.Id']
-            for row in result:
-                del row['INPUT.Id']
-    elif err_tbl is None or err_tbl.nrows == 0:
-        status = StatusCode.SERVER_ERROR
-        message = "Error table is empty, despite apparent error"
+                # Dictionary comprehension inside list comprehension
+                result = [
+                    {sanitize_colname(out_tbl.col_names[i]):
+                        str(out_tbl.rows[j][i]).encode("unicode_escape")
+                        for i in xrange(out_tbl.ncols())}
+                    for j in xrange(max_results)
+                ]
+
+                # Get WebSocket routing information
+                for row in result:
+                    del row['INPUT.Id']
+
+                return_obj["message"] = ""
+                return_obj["status"] = StatusCode.OK
+                return_obj["result"] = result
     else:
-        errors = [
-            {err_tbl.col_names[i]: str(err_tbl.rows[j][i]).encode("unicode_escape")
-                for i in xrange(err_tbl.ncols())}
-            for j in xrange(err_tbl.nrows())
-        ]
-        socketid = errors[0]['INPUT.Id']
-        error_code = errors[0]['error_code']
-        error_message = errors[0]['error_message']
-        status = StatusCode.SERVER_ERROR
-        if rc == pxcommon.PXP_INVALID_ARGUMENT:
-            status = StatusCode.INVALID_REQUEST
-        message = "Code: {c}. Message: {m}".format(
-            c=error_code, m=error_message
-        )
-
-    return_obj = {}
-    return_obj["result"] = result
-    return_obj["status"] = status
-    return_obj["message"] = message
-    return_obj["socketid"] = socketid
+        if(pxcommon.PXP_INVALID_ARGUMENT):
+            return_obj["status"] = StatusCode.INVALID_REQUEST
+        else:
+            return_obj["status"] = StatusCode.SERVER_ERROR
+        return_obj["message"] = rm
+        return_obj["result"] = []
 
     return json.dumps(return_obj, sort_keys=True)
 
@@ -143,11 +140,12 @@ if __name__ == "__main__":
         GeoSpatialDefaults.ERROR_TABLE_COLS,
         GeoSpatialDefaults.BESTMATCH_FINDER_OPTIONS
     )
+
     pprint.pprint(out_tbl)
     pprint.pprint(err_tbl)
 
     result = create_json_result_with_status(
-        out_tbl, err_tbl, rc
+        0, out_tbl, err_tbl, rc, msg
     )
     result_dict = json.loads(result)
     print result_dict["status"]
