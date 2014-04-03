@@ -1,13 +1,17 @@
 ﻿USE `webusage`;
+SET FOREIGN_KEY_CHECKS = 0;
+
 
 DROP TABLE IF EXISTS `webusage`.`userapi`;
 CREATE TABLE  `webusage`.`userapi` (
-  `ID` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `ID` int(10) unsigned NOT NULL,
   `PublicKey` varchar(256) NOT NULL,
   `PrivateKey` varchar(255) NOT NULL,
   KEY `FK_UserAPI_1` (`ID`),
   CONSTRAINT `FK_UserAPI_1` FOREIGN KEY (`ID`) REFERENCES `users` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
+
+ALTER TABLE `webusage`.`userapi` ADD INDEX `Index_2`(`PublicKey`);
 
 
 # Private Key -> Salted Private Key
@@ -269,3 +273,19 @@ BEGIN
 END $$
 
 DELIMITER ;
+
+
+DROP TABLE IF EXISTS `webusage`.`userapi_jobrequest`;
+CREATE TABLE `webusage`.`userapi_jobrequest` (
+  `ID` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
+  `PublicKey` VARCHAR(256) NOT NULL,
+  `Request` TEXT NOT NULL,
+  PRIMARY KEY (`ID`),
+  CONSTRAINT `FK_userapi_jobrequest_1` FOREIGN KEY `FK_userapi_jobrequest_1` (`PublicKey`)
+    REFERENCES `userapi` (`PublicKey`)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+)
+ENGINE = InnoDB;
+
+SET FOREIGN_KEY_CHECKS = 1;
