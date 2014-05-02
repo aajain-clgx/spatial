@@ -27,6 +27,7 @@ var authenticator = authenticator(config);
 var server = restify.createServer({name: config.appName});
 server.use(restify.queryParser());
 server.use(restify.gzipResponse());
+server.use(restify.bodyParser());
 
 // PRIVATE HELPER FUNCTIONS
 
@@ -232,6 +233,140 @@ var county = function(request, response, next){
   return query(request, response, next);
 };
 
+var insertCustomQuery = function(request, response, next){
+  var startTime = process.hrtime();
+  var callId = logger.getId();
+
+  logger.verbose(Utils.format("%d insertCustomQuery(publickey=%s,customquery=%s) entry",
+                              callId, 
+                              request.params.publickey,
+                              request.params.customQuery
+                ));
+
+  async.series({
+    auth: function(callback){ 
+            handleAuthentication(request, callback); 
+          },
+    action: function(callback){
+        userlib.insertRequestObject(request.params.publickey, request.params.customQuery, callback);
+      }
+  },
+  function(err, results){
+    if(err){
+      handleError(err, callId, "insertCustomQuery", response);
+    }else{
+      response.send(JSON.parse(results.action));
+    }
+
+    var endTime = process.hrtime(startTime);
+    logger.verbose(Utils.format("%d insertCustomQuery() elapsed=%ds", callId, getElapsedTime(endTime))); 
+
+    return next();          
+  }
+  );
+};
+
+var updateCustomQuery = function(request, response, next){
+  var startTime = process.hrtime();
+  var callId = logger.getId();
+
+  logger.verbose(Utils.format("%d updateCustomQuery(publickey=%s,customid=%sm,customquery=%s) entry",
+                              callId, 
+                              request.params.publickey,
+                              request.params.customid, 
+                              request.params.customQuery
+                ));
+
+  async.series({
+    auth: function(callback){ 
+            handleAuthentication(request, callback); 
+          },
+    action: function(callback){
+        userlib.updateRequestObject(request.params.publickey, request.params.customid, request.params.customQuery, callback);
+      }
+  },
+  function(err, results){
+    if(err){
+      handleError(err, callId, "updateCustomQuery", response);
+    }else{
+      response.send(JSON.parse(results.action));
+    }
+
+    var endTime = process.hrtime(startTime);
+    logger.verbose(Utils.format("%d updateCustomQuery() elapsed=%ds", callId, getElapsedTime(endTime))); 
+
+    return next();          
+  }
+  );
+};
+
+
+var getCustomQuery = function(request, response, next){
+  var startTime = process.hrtime();
+  var callId = logger.getId();
+
+  logger.verbose(Utils.format("%d getCustomQuery(publickey=%s,customid=%s) entry",
+                              callId, 
+                              request.params.publickey,
+                              request.params.customid
+                ));
+
+  async.series({
+    auth: function(callback){ 
+            handleAuthentication(request, callback); 
+          },
+    action: function(callback){
+        userlib.getRequestObject(request.params.publickey, request.params.customid, callback);
+      }
+  },
+  function(err, results){
+    if(err){
+      handleError(err, callId, "getCustomQuery", response);
+    }else{
+      response.send(JSON.parse(results.action));
+    }
+
+    var endTime = process.hrtime(startTime);
+    logger.verbose(Utils.format("%d getCustomQuery() elapsed=%ds", callId, getElapsedTime(endTime))); 
+
+    return next();          
+  }
+  );
+};
+
+var deleteCustomQuery = function(request, response, next){
+  var startTime = process.hrtime();
+  var callId = logger.getId();
+
+  logger.verbose(Utils.format("%d deleteCustomQuery(publickey=%s,customid=%s) entry",
+                              callId, 
+                              request.params.publickey,
+                              request.params.customid
+                ));
+
+  async.series({
+    auth: function(callback){ 
+            handleAuthentication(request, callback); 
+          },
+    action: function(callback){
+        userlib.deleteRequestObject(request.params.publickey, request.params.customid, callback);
+      }
+  },
+  function(err, results){
+    if(err){
+      handleError(err, callId, "deleteCustomQuery", response);
+    }else{
+      response.send(JSON.parse(results.action));
+    }
+    var endTime = process.hrtime(startTime);
+    logger.verbose(Utils.format("%d deleteCustomQuery() elapsed=%ds", callId, getElapsedTime(endTime))); 
+
+    return next();          
+  }
+  );
+};
+
+
 var bestGeocode = function(request, response, next){
   var startTime = process.hrtime();
   var callId = logger.getId();
@@ -278,15 +413,20 @@ var bestGeocode = function(request, response, next){
   );
 };
 
+
 // ROUTE
 server.get('/permissions/:publickey', getPermissions);
 server.get('/info/:publickey', getAccountInfo);
 server.get('/geocode/:publickey', bestGeocode);
 server.get('/query/:publickey', query);
 server.get('/county/:publickey', county);
+server.get('customize/:publickey', getCustomQuery);
+server.post('/customize/:publickey', insertCustomQuery);
+server.put('/customize/:publickey', updateCustomQuery);
+server.del('/customize/:publickey', deleteCustomQuery);
+
 
 // SERVER LAUNCH
-
 server.listen(config.serverPort, function(){
   var listenStr = Utils.format('%s listening at %s', server.name, server.url);
   logger.notice(listenStr);

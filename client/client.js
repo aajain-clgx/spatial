@@ -32,16 +32,43 @@ var getServer = function(urlPath) {
   });
 };
 
+var postServer = function(urlPath, paramObj){
+  var fullURLObj = clientlib.getPathWithSignature(urlPath);
+  client.post(fullURLObj.path, paramObj, function(err, req, res, obj) {
+    if (err) {
+      console.log(err);
+    }else{ 
+      console.log(JSON.stringify(obj, null, 2));
+    }
+  });
+};  
+
+
 // SHOW OUTPUT
 
-getServer('/permissions/425032B8C0FB434992F69370FED9D071');
-getServer('/info/425032B8C0FB434992F69370FED9D071');
+var queryCounty = {
+  customQuery: {
+    Layer: 'County',
+    Operation:'pip',
+    Fields: {
+      COUNTY:'County Name',
+      STATE: 'State',
+      FIPSSTCO: 'Fips Code' 
+    }                         
+  }
+};
 
-var geocode_params = querystring.stringify({addressline: '3239 Redstone Road', cityline: 'Boulder, CO'});
-getServer('/geocode/425032B8C0FB434992F69370FED9D071?' + geocode_params);
+postServer('/customize/425032B8C0FB434992F69370FED9D071', queryCounty);
+getServer('/customize/425032B8C0FB434992F69370FED9D071?customid=1');
 
-var geospatial_county_params = querystring.stringify({lat: '40.0', lon: '-105.25'});
-getServer('/county/425032B8C0FB434992F69370FED9D071?' + geospatial_county_params);
+//getServer('/permissions/425032B8C0FB434992F69370FED9D071');
+//getServer('/info/425032B8C0FB434992F69370FED9D071');
 
-var geospatial_params = querystring.stringify({lat: '40.0', lon: '-105.25', layer:'County'});
-getServer('/query/425032B8C0FB434992F69370FED9D071?' + geospatial_params);
+//var geocode_params = querystring.stringify({addressline: '3239 Redstone Road', cityline: 'Boulder, CO'});
+//getServer('/geocode/425032B8C0FB434992F69370FED9D071?' + geocode_params);
+
+//var geospatial_county_params = querystring.stringify({lat: '40.0', lon: '-105.25'});
+//getServer('/county/425032B8C0FB434992F69370FED9D071?' + geospatial_county_params);
+
+//var geospatial_params = querystring.stringify({lat: '40.0', lon: '-105.25', layer:'County'});
+//getServer('/query/425032B8C0FB434992F69370FED9D071?' + geospatial_params);
