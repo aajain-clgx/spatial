@@ -60,12 +60,15 @@ def create_server_error_json_result(statuscode, message):
 
 
 def create_json_result_with_status(
-        socketid, out_tbl, err_tbl, rc, rm, max_results=-1):
+        socketid, out_tbl, err_tbl, rc, rm, fieldmap, max_results=-1):
     """Creates a JSON string from a PxPointSC result."""
 
-    def sanitize_colname(colname):
+    def sanitize_colname(colname, fieldmap):
         """Remove $ sign from col name if it exists"""
-        return colname[1:] if colname[0] == '$' else colname
+        colname = colname[1:] if colname[0] == '$' else colname
+        if(fieldmap is not None):
+            colname = fieldmap[colname] 
+        return colname
 
     return_obj = {}
     return_obj['socketid'] = socketid
@@ -93,7 +96,7 @@ def create_json_result_with_status(
 
                 # Dictionary comprehension inside list comprehension
                 result = [
-                    {sanitize_colname(out_tbl.col_names[i]):
+                    {sanitize_colname(out_tbl.col_names[i], fieldmap):
                         str(out_tbl.rows[j][i]).encode("unicode_escape")
                         for i in xrange(out_tbl.ncols())}
                     for j in xrange(max_results)

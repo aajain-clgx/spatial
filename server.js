@@ -228,6 +228,68 @@ var query = function(request, response, next){
   );
 };
 
+var execCustomQuery = function(request, response, next){
+  var startTime = process.hrtime();
+  var callId = logger.getId();
+ 
+  logger.verbose(Utils.format("%d execCustomQuery(publickey=%s,lat=%s,lon=%s,layer=%s) entry",
+                              callId, 
+                              request.params.publickey,
+                              request.params.customid,
+                              request.params.lat,
+                              request.params.lon
+                ));
+
+  async.series({
+    auth: function(callback){ 
+            handleAuthentication(request, callback); 
+          },
+    action: function(callback){
+
+        userlib.getRequestObject(request.params.publickey, request.params.customid, function(err, result){
+          if(err){
+            return callback(err, null);
+          }
+          
+          
+          var ws = new WebSocket(config.socketserver);
+          ws.onerror = function(reason){
+            return callback(reason, null);
+          }; 
+          ws.on('open', function(){
+            ws.send(JSON.stringify({Operation: 'query', lat: request.params.lat, lon: request.params.lon, custom: JSON.parse(result)}),
+                     function(err){
+                        if(err){
+                          return callback(err, null);
+                        }
+                      });
+          });
+
+          ws.on('message', function(data){
+            ws.close();
+            return callback(null, data);
+          });          
+        });
+
+      }
+  },
+  function(err, results){
+    if(err){
+      console.log(err);
+      handleError(err, callId, "query", response);
+    }else{
+      response.send(JSON.parse(results.action));
+    }
+
+    var endTime = process.hrtime(startTime);
+    logger.verbose(Utils.format("%d execCustomQuery() elapsed=%ds", callId, getElapsedTime(endTime))); 
+
+    return next();          
+  }
+  );
+};
+
+
 var county = function(request, response, next){
   request.params.layer = 'County';
   return query(request, response, next);
@@ -255,7 +317,7 @@ var insertCustomQuery = function(request, response, next){
     if(err){
       handleError(err, callId, "insertCustomQuery", response);
     }else{
-      response.send(JSON.parse(results.action));
+      response.send({status: 'OK', message: '', result:{ customID: JSON.parse(results.action )}});
     }
 
     var endTime = process.hrtime(startTime);
@@ -285,11 +347,11 @@ var updateCustomQuery = function(request, response, next){
         userlib.updateRequestObject(request.params.publickey, request.params.customid, request.params.customQuery, callback);
       }
   },
-  function(err, results){
+  function(err){
     if(err){
       handleError(err, callId, "updateCustomQuery", response);
     }else{
-      response.send(JSON.parse(results.action));
+      response.send({status: 'OK', message: '', results:{}});
     }
 
     var endTime = process.hrtime(startTime);
@@ -352,11 +414,11 @@ var deleteCustomQuery = function(request, response, next){
         userlib.deleteRequestObject(request.params.publickey, request.params.customid, callback);
       }
   },
-  function(err, results){
+  function(err){
     if(err){
       handleError(err, callId, "deleteCustomQuery", response);
     }else{
-      response.send(JSON.parse(results.action));
+      response.send({status: 'OK', message: '', result: {}});
     }
     var endTime = process.hrtime(startTime);
     logger.verbose(Utils.format("%d deleteCustomQuery() elapsed=%ds", callId, getElapsedTime(endTime))); 
@@ -418,7 +480,8 @@ var bestGeocode = function(request, response, next){
 server.get('/permissions/:publickey', getPermissions);
 server.get('/info/:publickey', getAccountInfo);
 server.get('/geocode/:publickey', bestGeocode);
-server.get('/query/:publickey', query);
+server.get('/query/:publickey/', query);
+server.get('/customquery/:publickey/:customid', execCustomQuery);
 server.get('/county/:publickey', county);
 server.get('customize/:publickey', getCustomQuery);
 server.post('/customize/:publickey', insertCustomQuery);

@@ -46,14 +46,22 @@ class GeoSpatialWorker(multiprocessing.Process):
             in_tbl = geospatiallib.create_query_input_table(
                 msg['WebSocketId'], msg['lat'], msg['lon'])
 
-            out_cols = '[{a}]INPUT.Id;'.format(a=msg['layer']) + ';'.join(
-                layer_alias_fields_map.get(msg['layer'], msg['layer']))
-            query_options = geospatiallib.create_query_options(msg['layer'])
+            if('custom' in msg):
+                layername = msg['custom']['Layer']
+                fieldmap = msg['custom']['Fields']
+                fieldmap['INPUT.Id'] = 'INPUT.Id'
+                out_cols = ';'.join(['[%s]%s' % (layername, k) for k in fieldmap])
+            else:
+                layername = msg['layer']
+                fieldmap = None
+                out_cols = '[{a}]INPUT.Id;'.format(a=layername) + ';'.join(
+                    layer_alias_fields_map.get(layername, layername))
+            query_options = geospatiallib.create_query_options(layername)
             out_tbl, err_tbl, rc, pxmsg = pxpointsc.geospatial_query(
                 self.spatial_handle,
                 in_tbl,
                 out_cols,
-                GeoSpatialDefaults.get_query_error_columns(msg['layer']),
+                GeoSpatialDefaults.get_query_error_columns(layername),
                 query_options)
 
             # Create output JSON dictionary
@@ -62,7 +70,8 @@ class GeoSpatialWorker(multiprocessing.Process):
                 out_tbl,
                 err_tbl,
                 rc,
-                pxmsg)
+                pxmsg,
+                fieldmap)
 
             # put this back on the pipe
             self.socket_push.send(output)

@@ -58,8 +58,20 @@ var queryCounty = {
   }
 };
 
-postServer('/customize/425032B8C0FB434992F69370FED9D071', queryCounty);
-getServer('/customize/425032B8C0FB434992F69370FED9D071?customid=1');
+var queryCounty2 = {
+  customQuery: {
+    Layer: 'County',
+    Operation:'pip',
+    Fields: {
+      DT_UPD: "Date Updated",
+      DT_VRF: "Date Verified",
+      COUNTY: 'County Name'  
+    }                         
+  }
+};
+
+//postServer('/customize/425032B8C0FB434992F69370FED9D071', queryCounty2);
+//getServer('/customize/425032B8C0FB434992F69370FED9D071?customid=8');
 
 //getServer('/permissions/425032B8C0FB434992F69370FED9D071');
 //getServer('/info/425032B8C0FB434992F69370FED9D071');
@@ -70,5 +82,12 @@ getServer('/customize/425032B8C0FB434992F69370FED9D071?customid=1');
 //var geospatial_county_params = querystring.stringify({lat: '40.0', lon: '-105.25'});
 //getServer('/county/425032B8C0FB434992F69370FED9D071?' + geospatial_county_params);
 
-//var geospatial_params = querystring.stringify({lat: '40.0', lon: '-105.25', layer:'County'});
-//getServer('/query/425032B8C0FB434992F69370FED9D071?' + geospatial_params);
+var geospatial_params = querystring.stringify({lat: '40.0', lon: '-105.25', layer:'County'});
+getServer('/query/425032B8C0FB434992F69370FED9D071?' + geospatial_params);
+
+var customparam = querystring.stringify({lat: '40.0', lon: '-105.25'});
+getServer('/customquery/425032B8C0FB434992F69370FED9D071/1?' + customparam);
+
+var customparam = querystring.stringify({lat: '40.0', lon: '-105.25'});
+getServer('/customquery/425032B8C0FB434992F69370FED9D071/10?' + customparam);
+
